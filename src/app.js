@@ -8,6 +8,8 @@ const winston = require('winston');
 //const { bookmarks } = require('../src/store')
 const uuid = require('uuid/v4');
 
+const BookmarksService = require('./bookmarks-service')
+
 const app = express()
 
 const morganOption = (NODE_ENV === 'production')
@@ -66,33 +68,43 @@ app.use(function validateBearerToken(req, res, next) {
 
 //test
 app.get('/', (req, res) => {
-        res.send('hello world!')
+        res.send('Hello, world!')
 });
 
+//testing bookmarks service
+//console.log(BookmarksService.getBookmarks())
+
 //returns a list of bookmarks
-app.get('/bookmarks', (req, res) => {
-    res
-        .json(bookmarks);
+app.get('/bookmarks', (req, res, next) => {
+    const knexInstance = req.app.get('db')
+    BookmarksService.getBookmarks(knexInstance)
+        .then(bookmarks => {
+            res.json(bookmarks)
+        })
+        .catch(next)
 });
 
 // returns a single bookmark with the given ID, 
 //return 404 Not Found if the ID is not valid
-app.get('/bookmarks/:id', (req, res) => {
-
+app.get('/bookmarks/:id', (req, res, next) => {
+    const knexInstance = req.app.get('db')
     const { id } = req.params;
-    const bookmark = bookmarks.find(b => b.id == id);
 
-    //make sure we found a bookmark
-    if (!bookmark) {
-        logger.error(`Card with id ${id} not found.`)
-        return res
-            .status(404)
-            .send('Card Not Found')
-    }
-
-    res
-        .json(bookmark);
-
+    BookmarksService.getById(knexInstance, id)
+        .then(bookmark => {
+            //make sure we found a bookmark
+            if (!bookmark) {
+                logger.error(`Bookmark with id ${id} not found.`)
+                return res
+                    .status(404)
+                    .json({
+                        error: { message: `Bookmark Not Found`}
+                    })
+            }
+        
+            res.json(bookmark)
+        })
+        .catch(next)
 })
 
 //POST /bookmarks accepts a JSON object representing a bookmark 
