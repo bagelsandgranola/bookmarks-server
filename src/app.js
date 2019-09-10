@@ -1,3 +1,20 @@
+//refactor POST to support inserting into database
+    // refactor or implement integration tests for POSTing bookmarks
+    //make sure resposnes get sanitized
+
+    //test that POST /bookmarks validates each bookmark to have required fields
+    //test POST /bookmarks has valid formats (rating should be 1=-5
+
+    //if POST endpoint responds with new bookmark, sanitize
+
+//refactor DELETE to support removing from database
+    //refactor or implement integration tests for DELETIng book marks
+    //make sure DELETE responds with 404 when it doesn't exist
+
+
+//refactor GET methods to ensure that all bookmarks get sanitized
+
+
 require ('dotenv').config()
 const express = require('express')
 const morgan = require('morgan')
@@ -5,13 +22,11 @@ const cors = require('cors')
 const helmet = require('helmet')
 const { NODE_ENV } = require('./config')
 const winston = require('winston');
-//const { bookmarks } = require('../src/store')
 const uuid = require('uuid/v4');
 
-const BookmarksService = require('./bookmarks-service')
+const bookmarksRouter = require('./bookmarks/bookmarks-router')
 
 const app = express()
-
 const morganOption = (NODE_ENV === 'production')
     ? 'tiny'
     : 'common';
@@ -34,14 +49,6 @@ app.use(morgan(morganOption))
 app.use(cors())
 app.use(helmet())
 app.use(express.json());
-
-const bookmarks = [{
-    id: '8sdfbvbs65sd',
-    title: 'Google',
-    url: 'http://google.com',
-    desc: 'An indie search engine startup',
-    rating: 4
-}];
 
 app.use(function errorHandler(error, req, res, next) {
     let response
@@ -66,125 +73,7 @@ app.use(function validateBearerToken(req, res, next) {
         next()
     })   
 
-//test
-app.get('/', (req, res) => {
-        res.send('Hello, world!')
-});
-
-//testing bookmarks service
-//console.log(BookmarksService.getBookmarks())
-
-//returns a list of bookmarks
-app.get('/bookmarks', (req, res, next) => {
-    const knexInstance = req.app.get('db')
-    BookmarksService.getBookmarks(knexInstance)
-        .then(bookmarks => {
-            res.json(bookmarks)
-        })
-        .catch(next)
-});
-
-// returns a single bookmark with the given ID, 
-//return 404 Not Found if the ID is not valid
-app.get('/bookmarks/:id', (req, res, next) => {
-    const knexInstance = req.app.get('db')
-    const { id } = req.params;
-
-    BookmarksService.getById(knexInstance, id)
-        .then(bookmark => {
-            //make sure we found a bookmark
-            if (!bookmark) {
-                logger.error(`Bookmark with id ${id} not found.`)
-                return res
-                    .status(404)
-                    .json({
-                        error: { message: `Bookmark Not Found`}
-                    })
-            }
-        
-            res.json(bookmark)
-        })
-        .catch(next)
-})
-
-//POST /bookmarks accepts a JSON object representing a bookmark 
-//and adds it to the list
-app.post('/bookmarks', (req, res) => {
-
-    const { title, url, desc, rating} = req.body;
-
-    //validate 
-
-    if (!title) {
-        logger.error(`Title is required`);
-        return res 
-            .status(400)
-            .send('Invalid data');
-    }
-
-    if (!url) {
-        logger.error(`url is required`);
-        return res 
-            .status(400)
-            .send('Invalid data');
-    }
-
-    if (!desc) {
-        logger.error(`description is required`);
-        return res 
-            .status(400)
-            .send('Invalid data');
-    }
-
-    if (!rating) {
-        logger.error(`rating is required`);
-        return res 
-            .status(400)
-            .send('Invalid data');
-    }
-
-    const id = uuid();
-
-    const bookmark = {
-        id,
-        title,
-        url,
-        desc,
-        rating
-    };
-
-    bookmarks.push(bookmark);
-    logger.info(`Card with id ${id} created`);
-
-    res
-        .status(201)
-        .location(`http://localhost:8000/bookmarks/${id}`)
-        .json(bookmark)
-})
-
-//DELETE /bookmarks/:id deletes bookmark with a given id 
-app.delete('/bookmarks/:id', (req, res) => {
-
-    const { id } = req.params;
-
-    const bookmarkIndex = bookmarks.findIndex(b => b.id == id);
-
-    if (bookmarkIndex === -1) {
-        logger.error(`Bookmark with id ${id} not found. `);
-        return res
-            .status(404)
-            .send('Not Found');
-    }
-
-    bookmarks.splice(bookmarkIndex, 1);
-
-    logger.info(`Bookmark with id ${id} deleted.`);
-    res
-        .status(204)
-        .end();
-
-})
-
+app.use(bookmarksRouter)
 
 module.exports = app
 
