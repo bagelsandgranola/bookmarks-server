@@ -4,6 +4,7 @@ const logger = require('../logger')
 const bookmarksRouter = express.Router()
 const jsonParser = express.json()
 const xss = require('xss')
+const path = require('path')
 
 const serializeBookmark = bookmark => ({
     id: bookmark.id,
@@ -80,7 +81,8 @@ bookmarksRouter
         .then(bookmark => {
             res
                 .status(201)
-                .location(`/bookmarks/${bookmark.id}`)
+                //.location(`/api/bookmarks/${bookmark.id}`)
+                .location(path.posix.join(req.originalUrl, `/${bookmark.id}`))
                 .json(serializeBookmark(bookmark))
         })
         .catch(next)
@@ -119,6 +121,29 @@ bookmarksRouter
         })
         .catch(next)
         
+    })
+    .patch(jsonParser, (req, res, next) => {
+        const knexInstance = req.app.get('db')
+        const { bookmark_id } = req.params
+        const { title, url, description, rating} = req.body
+        const updatedBookmarkInfo = {
+                title,
+                url,
+                description,
+                rating,
+            }
+
+        const numberOfValues = Object.values(updatedBookmarkInfo).filter(Boolean).length
+        if (numberOfValues === 0) {
+            return res.status(400).json({
+                error: {message:'Request body must contain either title, description, url, or rating'}
+            })
+        }
+        BookmarksService.updateBookmark(knexInstance, bookmark_id, updatedBookmarkInfo)
+        .then(numRowsAffected => {
+            res.status(204).end()
+        })
+        .catch(next)
     })
 
 
