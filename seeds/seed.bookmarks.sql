@@ -1,6 +1,6 @@
 INSERT INTO bookmarks (title, url, description, rating) 
 VALUES
-    ( 'Google', 'http://google.com','An indie search engine startup', 4),
+    ('Google', 'http://google.com','An indie search engine startup', 4),
     ('Facebook', 'http://facebook.com','everyone you went to highschool with', 1),
     ('LinkedIn', 'http://linkedin.com','brag about your accomplishments', 2),  
     ('Thinkful', 'http://thinkful.com','great place to learn', 5), 

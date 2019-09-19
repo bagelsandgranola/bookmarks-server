@@ -1,20 +1,3 @@
-//refactor POST to support inserting into database
-    // refactor or implement integration tests for POSTing bookmarks
-    //make sure resposnes get sanitized
-
-    //test that POST /bookmarks validates each bookmark to have required fields
-    //test POST /bookmarks has valid formats (rating should be 1=-5
-
-    //if POST endpoint responds with new bookmark, sanitize
-
-//refactor DELETE to support removing from database
-    //refactor or implement integration tests for DELETIng book marks
-    //make sure DELETE responds with 404 when it doesn't exist
-
-
-//refactor GET methods to ensure that all bookmarks get sanitized
-
-
 require ('dotenv').config()
 const express = require('express')
 const morgan = require('morgan')
@@ -73,7 +56,7 @@ app.use(function validateBearerToken(req, res, next) {
         next()
     })   
 
-app.use(bookmarksRouter)
+app.use('/api/', bookmarksRouter)
 
 module.exports = app
 
